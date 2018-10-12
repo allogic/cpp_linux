@@ -2,7 +2,7 @@
 A simple c++ wrapper for easy access to the linux framebuffer.
 
 ## Setup
-Check if it is already working with ```cat /dev/urandom > /dev/fb0```, if you do not get random pixels on the monitor check your permissions on the device..
+Check if it is already working with ```cat /dev/urandom > /dev/fb0```, if you do not get random pixels on the monitor check your permissions on the device.
 
 ## Usage
 Here is a simple example how you can use the wrapper.
