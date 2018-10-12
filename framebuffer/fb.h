@@ -18,57 +18,48 @@ extern "C" {
 #define FB_DEVICE "/dev/fb0"
 
 namespace fb {
-  struct rect {
-    public:
-      uint32_t x, y, w, h;
-  };
-
-  struct index {
-    public:
-      uint32_t x, y, c;
-
-      enum c {
-        R = 0, G = 1, B = 2, T = 3
-      };
-  };
-
   struct framebuffer {
     public:
-      framebuffer() = default;
-      framebuffer(const framebuffer &) = default;
-      framebuffer(const rect r, const char * fbd = FB_DEVICE) : wrect(r), fbfd(open(fbd, O_RDWR)) {
-        if (!fbfd) std::cerr<< "Cannot open framebuffer device" << std::endl;
+      const uint32_t x, y, w, h;
 
-        if (ioctl(fbfd, FBIOGET_FSCREENINFO, &finfo)) std::cerr << "Cannot read fixed screen information" << std::endl;
-        if (ioctl(fbfd, FBIOGET_VSCREENINFO, &vinfo)) std::cerr << "Cannot read variable screen information" << std::endl;
+      framebuffer(const uint32_t x, const uint32_t y, const uint32_t w, const uint32_t h, const char * fbd = FB_DEVICE) :
+        x(x),
+        y(y),
+        w(w),
+        h(h),
+        m_fbfd(open(fbd, O_RDWR)) {
+          if (!m_fbfd) std::cerr<< "Cannot open framebuffer device" << std::endl;
 
-        ssize = vinfo.xres * vinfo.yres * vinfo.bits_per_pixel / 8;
+          if (ioctl(m_fbfd, FBIOGET_FSCREENINFO, &m_fix_info)) std::cerr << "Cannot read fixed screen information" << std::endl;
+          if (ioctl(m_fbfd, FBIOGET_VSCREENINFO, &m_var_info)) std::cerr << "Cannot read variable screen information" << std::endl;
 
-        fb = static_cast<uint8_t *>(mmap(0, ssize, PROT_READ | PROT_WRITE, MAP_SHARED, fbfd, 0));
-      }
+          m_screen_size = m_var_info.xres * m_var_info.yres * m_var_info.bits_per_pixel / 8;
+
+          m_fb = static_cast<uint8_t *>(mmap(0, m_screen_size, PROT_READ | PROT_WRITE, MAP_SHARED, m_fbfd, 0));
+        }
 
       ~framebuffer() {
-        munmap(fb, ssize);
-        close(fbfd);
+        munmap(m_fb, m_screen_size);
+        close(m_fbfd);
       }
 
-      uint8_t & operator [] (index i) {
-        uint32_t idx = (i.x + vinfo.xoffset) * (vinfo.bits_per_pixel / 8) + (i.y + vinfo.yoffset) * finfo.line_length;
-        return *(fb + idx + i.c);
+      uint32_t index(uint32_t x, uint32_t y) {
+        return (x + m_var_info.xoffset) * (m_var_info.bits_per_pixel / 8) + (y + m_var_info.yoffset) * m_fix_info.line_length;
+      }
+
+      uint8_t & operator [] (uint32_t i) {
+        return *(m_fb + i);
       }
 
     private:
-      const rect wrect;
+      uint32_t m_screen_size;
 
-      uint32_t ssize;
-      uint32_t isize;
+      fb_var_screeninfo m_var_info;
+      fb_fix_screeninfo m_fix_info;
 
-      fb_var_screeninfo vinfo;
-      fb_fix_screeninfo finfo;
+      const int32_t m_fbfd;
 
-      const int fbfd;
-
-      uint8_t * fb = nullptr;
+      uint8_t * m_fb = nullptr;
   };
 }
 
