@@ -8,6 +8,10 @@ Include the header and start configuring.
 Here is a simple example how you can use the parser.
 
 ```
+./main -h -v -b64e -gz -i=./inp.txt -o=./out.txt
+```
+
+```
 #include <iostream>
 
 #include "arg.h"
