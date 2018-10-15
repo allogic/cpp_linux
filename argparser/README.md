@@ -1,5 +1,5 @@
 # Argument Parser
-A simple regex argument parser for easy command line arguments.
+A simple regex argument parser for easy command line arguments. Supports 64 commands and aliases.
 
 ## Setup
 Include the header and start configuring.
