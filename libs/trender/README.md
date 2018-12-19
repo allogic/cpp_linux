@@ -1,5 +1,5 @@
-# Linux Framebuffer
-A simple c++ terminal escape sequence rasterizer.
+# Linux Terminal Renderer
+A simple c++ terminal escape sequence renderer.
 
 ## Setup
 Include the header and draw stuff in the terminal.
