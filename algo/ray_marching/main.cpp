@@ -84,7 +84,7 @@ inline float remap(float v, float f0, float f1, float t0, float t1) {
 float getd(const vec3 & pos) {
   vec3 sp = { 0.0f, 1.0f, 6.0f };
 
-  float sd = mag(pos - sp) - 2.0f;
+  float sd = mag(pos - sp) - 1.0f;
   float pd = pos.y;
 
   return std::min(sd, pd);

@@ -10,7 +10,15 @@
 
 #define DT 5
 
-const std::string shades = "$@B%8&WM#*oahkbdpqwmZO0QLCJUYXzcvunxrjft/\\|()1{}[]?-_+~<>i!lI;:,\"^`'. ";
+const std::string shades =
+"$@B%8&WM#"
+"*oahkbdpq"
+"wmZO0QLCJ"
+"UYXzcvunx"
+"rjft/\\|("
+")1{}[]?-_"
+"+~<>i!lI;"
+":,\"^`'. ";
 
 inline float remap(float v, float f0, float f1, float t0, float t1) {
   return ((v - f0) / (f1 - f0)) * (t1 - t0) + t0;
@@ -50,7 +58,9 @@ int main() {
 
         float col = fn.GetNoise(x + i, y + j, z);
 
-        re[off].gm.fg = (col > 0.0f) ? trd::COLOR::FGB_WHITE : trd::COLOR::FG_WHITE;
+        re[off].gm.fg = (col > 0.0f) ?
+          trd::COLOR::FGB_WHITE :
+          trd::COLOR::FG_WHITE;
         re[off].sym = shadetoasci(col);
       }
 
