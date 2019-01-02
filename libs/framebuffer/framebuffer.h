@@ -2,10 +2,12 @@
 #define FRAMEBUFFER_H
 
 #include <iostream>
+#include <cstdlib>
 #include <cstdint>
+#include <csignal>
+#include <functional>
 
 extern "C" {
-#include <stdlib.h>
 #include <unistd.h>
 #include <fcntl.h>
 
@@ -15,71 +17,91 @@ extern "C" {
 #include <sys/ioctl.h>
 }
 
-#define FB_DEVICE "/dev/fb0"
+#define DEVICE "/dev/fb0"
 
 namespace fb {
 
-  struct framebuffer {
+  struct buffer {
     public:
-      const uint32_t x, y, w, h;
+      fb_fix_screeninfo fb_fix_si;
+      fb_var_screeninfo fb_var_si;
 
-      framebuffer(
-          const uint32_t x,
-          const uint32_t y,
-          const uint32_t w,
-          const uint32_t h,
-          const char * fbd = FB_DEVICE) :
-        x(x),
-        y(y),
-        w(w),
-        h(h),
-        m_fbfd(open(fbd, O_RDWR)) {
-          if (!m_fbfd)
-            std::cerr<< "Cannot open framebuffer device" << std::endl;
+      uint32_t screen_size;
 
-          if (ioctl(m_fbfd, FBIOGET_FSCREENINFO, &m_fix_info))
-            std::cerr << "Cannot read fixed screen information" << std::endl;
+      uint32_t * map = nullptr;
 
-          if (ioctl(m_fbfd, FBIOGET_VSCREENINFO, &m_var_info))
-            std::cerr << "Cannot read variable screen information" << std::endl;
+      uint32_t w() const { return fb_var_si.xres; }
+      uint32_t h() const { return fb_var_si.yres; }
+      uint32_t s() const { return fb_var_si.xres * fb_var_si.yres; }
 
-          m_screen_size =
-            m_var_info.xres * m_var_info.yres * m_var_info.bits_per_pixel / 8;
+      uint32_t & operator [] (uint32_t i) { return *(map + i); }
+  };
 
-          m_fb = static_cast<uint8_t *>(mmap(
-                0,
-                m_screen_size,
-                PROT_READ | PROT_WRITE,
-                MAP_SHARED,
-                m_fbfd,
-                0));
-        }
+  static std::function<void(int32_t)> event_handler;
 
-      ~framebuffer() {
-        munmap(m_fb, m_screen_size);
-        close(m_fbfd);
-      }
+  struct event {
+    public:
+      static void on_close(std::function<void(int32_t)> ev) {
+        event_handler = ev;
 
-      uint32_t index(uint32_t x, uint32_t y) {
-        return (x + m_var_info.xoffset) *
-          (m_var_info.bits_per_pixel / 8) +
-          (y + m_var_info.yoffset) *
-          m_fix_info.line_length;
-      }
-
-      uint8_t & operator [] (uint32_t i) {
-        return *(m_fb + i);
+        std::signal(SIGINT, signal_handler);
       }
 
     private:
-      uint32_t m_screen_size;
+      static void signal_handler(int32_t sig) {
+        event_handler(sig);
 
-      fb_var_screeninfo m_var_info;
-      fb_fix_screeninfo m_fix_info;
+        std::_Exit(EXIT_SUCCESS);
+      }
+  };
 
-      const int32_t m_fbfd;
+  struct device {
+    public:
+      static bool open_fd(int32_t & fd, const char * device = DEVICE) {
+        fd = open(device, O_RDWR);
 
-      uint8_t * m_fb = nullptr;
+        if (!fd) {
+          std::cout << "cannot open file descriptor" << std::endl;
+
+          return false;
+        }
+
+        return true;
+      }
+
+      static bool map_buffer(int32_t & fd, buffer & buf) {
+        if (ioctl(fd, FBIOGET_FSCREENINFO, &buf.fb_fix_si)) {
+          std::cout << "cannot read fixed screen information" << std::endl;
+
+          return false;
+        }
+
+        if (ioctl(fd, FBIOGET_VSCREENINFO, &buf.fb_var_si)) {
+          std::cout << "cannot read variable screen information" << std::endl;
+
+          return false;
+        }
+
+        buf.screen_size = buf.s() * buf.fb_var_si.bits_per_pixel / 8;
+
+        buf.map = static_cast<uint32_t *>(mmap(
+              0,
+              buf.screen_size,
+              PROT_READ | PROT_WRITE,
+              MAP_SHARED,
+              fd,
+              0));
+      }
+
+      static void unmap_buffer(buffer & buf) {
+        munmap(buf.map, buf.screen_size);
+      }
+
+      static void close_fd(int32_t & fd) {
+        close(fd);
+
+        fd = 0;
+      }
   };
 
 }
