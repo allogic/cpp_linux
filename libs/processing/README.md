@@ -1,5 +1,5 @@
 # Linux Kernel Modesetting
-An advanced c++ wrapper for easy kernel mode setting in linux.
+An advanced c++ wrapper for easy kernel mode setting with double buffering and vsync support in linux.
 Create or debug algorithms with a full RGBA buffer in realtime.
 
 ## Setup
