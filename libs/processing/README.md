@@ -1,4 +1,4 @@
-# Linux Framebuffer
+# Linux Kernel Modesetting
 An advanced c++ wrapper for easy kernel mode setting in linux.
 Create or debug algorithms with a full RGBA buffer in realtime.
 
